@@ -1,5 +1,5 @@
 # Automatic-Arrows
-Sick of markers with no trail? Tired of missing one that you were right next to just because you didn't see it? Well, look no further!
+Sick of markers with no trail? Tired of having to backtrack after one you just missed? Well, look no further!
 
 Automatic Arrows is a small Pathing script that will automatically generate arrows pointing to the closest markers around you. All you have to do is toggle off any unwanted categories and toggle on automatic arrows, and they'll do the rest!
  
