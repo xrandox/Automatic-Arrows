@@ -1,5 +1,5 @@
 AA = {}
-AAVersion = "v1.0.0"
+AAVersion = "Beta v1.0.0"
 
 Debug:Print("Currently loading Automatic Arrows version " .. AAVersion)
 
