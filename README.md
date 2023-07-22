@@ -8,7 +8,9 @@ Automatic Arrows is a small Pathing script that will automatically generate arro
 _Disclaimer: Automatic Arrows in not responsible for any mounts or Tyrians hurt by running into their surroundings. Please watch where you're going!_
 
 # Showcase
-https://github.com/xrandox/Automatic-Arrows/assets/16171658/fb8725ba-6ed6-4350-b0d3-7cbf072b565f
+https://github.com/xrandox/Automatic-Arrows/assets/16171658/a72dc97a-b24b-4975-9e75-555a5a02c982
+
+
 
 
 
