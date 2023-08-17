@@ -1,107 +1,104 @@
+local attributes = {
+    InGameVisibility = true,
+    MiniMapVisibility = false,
+    MapVisibility = false,
+    IconSize = 0.75,
+}
+
 AA.AutomaticArrows = {
     arrowsToggledOn = "false",
-    maximumTargets = "3",
     arrows = nil,
     distance = {},
     workingCategory = nil
 }
 
-AA.storage = {
-    arrowsToggledOn = "false",
-    maximumTargets = "3",
-}
-
 Debug:Watch("AA_AutomaticArrows", AA.AutomaticArrows)
 
--- Check for stored values
-for key, default in pairs(AA.storage) do
-    local storedValue = Storage:ReadValue("automaticarrows", key)
-    if (storedValue ~= nil) then
-        AA.AutomaticArrows[key] = storedValue
-    else
-        AA.AutomaticArrows[key] = default
+-- Generates a new group of arrows
+local function generateNewArrowGroup()
+    AA.AutomaticArrows.arrows = {}
+
+    -- Create maximumTargets number of arrows
+    for _ = 1, AA.storage.maximumTargets + 0 do
+        local arrow = Pack:CreateMarker(attributes)
+        arrow:SetTexture("Data/Automatic-Arrows/arrow.png")
+        table.insert(AA.AutomaticArrows.arrows, arrow)
     end
 end
 
-local function createArrow()
-    local arrow = Pack:CreateMarker({
-        InGameVisibility = true,
-        MiniMapVisibility = false,
-        MapVisibility = false,
-        IconSize = 0.75,
-    })
-
-    arrow:SetTexture("Data/Automatic-Arrows/arrow.png")
-
-    table.insert(AA.AutomaticArrows.arrows, arrow)
-end
-
+-- Cleans up any existing markers
 local function cleanupMarkers()
-    Debug:Print("Cleaning up markers")
-
     if (AA.AutomaticArrows.arrows == nil) then return end
 
     for _, marker in pairs(AA.AutomaticArrows.arrows) do
         marker:Remove()
     end
+
     AA.AutomaticArrows.arrows = nil
 end
 
-local function generateNewArrowGroup()
-    Debug:Print("Generating new arrow group")
-    AA.AutomaticArrows.arrows = {}
-    for i = 1, AA.AutomaticArrows.maximumTargets + 0 do
-        createArrow()
-    end
+-- Cleans up all the stuff needed to stop animating the arrows
+local function stopAnimating()
+    AA.AutomaticArrows.arrowsToggledOn = "false"
+    AA_RefreshTargets()
+    AA_ToggleMenuOff()
 end
 
-local function point()
+-- Animates the arrows to point towards their target
+local function animate()
+    -- Get closest markers in working category
+    local closestMarkers = World:GetClosestMarkers(AA.AutomaticArrows.workingCategory, AA.storage.maximumTargets + 0)
 
-    local closestMarkers = World:GetClosestMarkers(AA.AutomaticArrows.workingCategory, AA.AutomaticArrows.maximumTargets + 0)
+    -- If no markers to point to, clean up the arrows
+    if (closestMarkers[1] == nil) then return stopAnimating() end
 
-    if (AA.AutomaticArrows.arrows == nil) then
-        generateNewArrowGroup()
-    end
+    -- If we dont have any arrows, generate them
+    if (AA.AutomaticArrows.arrows == nil) then generateNewArrowGroup() end
 
+    -- For each arrow, do calculations and move/rotate/tint it accordingly
     for i, marker in ipairs(AA.AutomaticArrows.arrows) do
+        if (closestMarkers[i] == nil) then
+            marker.InGameVisibility = false
+            return
+        end
+
+        marker.InGameVisibility = true
+        -- Vector calculations
         local playerPos = Mumble.PlayerCharacter.Position
         local target = closestMarkers[i]
         local vector = (target.Position - playerPos)
         vector = vector / vector:Length()
         local markerPos = playerPos + vector * 2
-        local markerVector = (target.Position - markerPos)
-        markerVector = markerVector / markerVector:Length()
 
+        -- Set pos and rotation
         marker:SetPos(markerPos.X, markerPos.Y, markerPos.Z - 1.5)
-        marker:SetRotZ(math.atan2(markerVector.Y, markerVector.X) - math.pi / 2)
-        marker:SetRotX(math.atan(markerVector.Z, markerVector.X))
+        marker:SetRotZ(math.atan2(vector.Y, vector.X) - math.pi / 2)
+        marker:SetRotX(math.atan(vector.Z, vector.X))
 
-        -- get distance
-        local distance = (target.Position - playerPos):Length()
+        -- Get distance
+        local distance = target.DistanceToPlayer
         AA.AutomaticArrows.distance[i] = distance
-        -- if close, lets delete it because we've 'collected' it
+
+        -- If player is close, lets remove it to simulate 'collecting' it
         if (distance < 3) then
             target:Remove()
         end
 
-        -- tint from distance
-        local tint = AA_InterpolateColorByDistance(distance)
-        marker.Tint = tint
+        -- Now tint based on distance
+        marker.Tint = AA_InterpolateColorByDistance(distance)
     end
 end
 
-AA_LoadVisibleCategories()
-AA.AutomaticArrows.workingCategory = AA.loader.visibleCategories[1]
-
+-- Cleans up the old markers and generates a new group with the new max amount
 function AA_ChangeMaxArrows()
-    Debug:Print("Changing Max Arrows")
     cleanupMarkers()
     generateNewArrowGroup()
 end
 
+-- If turned on, animates the arrows, otherwise cleans up any leftover markers, or nothing
 function AA_TickHandler(gameTime)
     if (AA.AutomaticArrows.arrowsToggledOn == "true") then
-        point()
+        animate()
     elseif (AA.AutomaticArrows.arrows ~= nil) then
         cleanupMarkers()
     end

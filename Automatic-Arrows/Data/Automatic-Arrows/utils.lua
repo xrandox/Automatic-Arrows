@@ -1,21 +1,45 @@
-AA.utils = {
-    distanceSettings = {
-        Long = { 600, 300, 3},
-        Medium = {300, 150, 3},
-        Close = {200, 75, 3}
-    },
-    currentSetting = "Long"
+-- Constants
+local far = I:Color(179, 16, 11)
+local mid = I:Color(176, 137, 21)
+local on = I:Color(48, 252, 3)
+AA.distanceSettings = {
+    Long = { 600, 300, 3, "For markers that are separated by long distances"},
+    Medium = {300, 150, 3, "For markers that aren't really far apart, but aren't close"},
+    Close = {200, 75, 3, "For markers that are close together"},
+    Auto = { 0, 0, 3, "Auto-calibrate"}
 }
 
-AA.utils.currentSetting = Storage:ReadValue("automaticarrows", "currentSetting")
-if (AA.utils.currentSetting == nil) then AA.utils.currentSetting = "Long" end
+Debug:Watch("AA_Dist", AA.distanceSettings)
 
+-- Calibrates the far and medium distance settings based on the mean distance between all markers
+function AA_AutomaticallyCalculateDistanceSetting()
+    -- Get an arbitrarily large amount of markers
+    local markers = World:GetClosestMarkers(AA.AutomaticArrows.workingCategory, 200)
+
+    local tDist = 0
+    local tMarkers = 0
+
+    -- For each marker, get the length (distance) between it and all other markers, add that to totals
+    for i = 1, #markers do
+        for j = i + 1, #markers do
+            local distance = (markers[i].Position - markers[j].Position):Length()
+            tDist = tDist + distance
+            tMarkers = tMarkers + 1
+        end
+    end
+
+    -- Get mean of totals
+    local mean = tDist / tMarkers
+
+    -- Calculate a far and medium number based off of that mean
+    AA.distanceSettings.Auto[1] = mean - (mean / 4)
+    AA.distanceSettings.Auto[2] = mean / 4
+end
+
+-- Returns a Color depending on how large the given distance is, calibrated to the current distance setting
 function AA_InterpolateColorByDistance(distance)
-    -- Calculate the RGB components based on the mapped value
-    local distanceLimits = AA.utils.distanceSettings[AA.utils.currentSetting]
-    local far = I:Color(179, 16, 11)
-    local mid = I:Color(214, 164, 13)
-    local on = I:Color(70, 214, 13)
+    local distanceLimits = AA.distanceSettings["Auto"]
+
     local red = 0
     local green = 0
     local blue = 0

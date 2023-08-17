@@ -23,6 +23,7 @@ AA.tutorial = {
 
 Debug:Watch("AA_Tutorial", AA.tutorial)
 
+-- Creates the tutorial marker at the players current position
 local function showTutorial()
     local pos = Mumble.PlayerCharacter.Position
     AA.tutorial.origin = pos
@@ -44,26 +45,31 @@ local function showTutorial()
     AA.tutorial.marker.object = marker
 
     AA.tutorial.shown = true
-    Storage:UpsertValue("automaticarrows", "firstTime", "false")
+    AA_SaveValue("firstTime", "false")
 end
 
+-- Removes the tutorial marker
 local function hideTutorial()
     AA.tutorial.marker.object:Remove()
     AA.tutorial.shown = false
 end
 
+-- Allows a "page turn" of the info whenever the player presses F on the marker
 function AA_Flip(marker, isAutoTriggered)
     if (isAutoTriggered == false) then
+        -- Change page number
         local newPage = AA.tutorial.page + 1
         if (newPage > AA.tutorial.max) then newPage = 1 end
         AA.tutorial.page = newPage
 
+        -- Update marker to new page
         marker:SetTexture(AA.tutorial.marker.icon[newPage])
         marker.Size = AA.tutorial.marker.iconSize[newPage]
         marker:GetBehavior("InfoModifier").InfoValue = AA.tutorial.marker.info[newPage]
     end
 end
 
+-- Toggles the tutorial on/off depending on current state
 function AA_ToggleTutorial()
     if (AA.tutorial.shown) then
         hideTutorial()
@@ -72,9 +78,10 @@ function AA_ToggleTutorial()
     end
 end
 
+-- If player gets too far from the tutorial, this hides it automatically 
 local function tutorialTickHandler(gametime)
     if (AA.tutorial.shown) then
-        if ((Mumble.PlayerCharacter.Position - AA.tutorial.origin):Length() > 50) then
+        if ((Mumble.PlayerCharacter.Position - AA.tutorial.origin):Length() > 40) then
             hideTutorial()
         end
     end
@@ -82,7 +89,7 @@ end
 
 Event:OnTick(tutorialTickHandler)
 
-local isFirstTime = Storage:ReadValue("automaticarrows", "firstTime")
-if (isFirstTime == nil) then
+-- Check if its the first time, if it is, then show the tutorial
+if (AA.storage.firstTime == "true") then
     showTutorial()
 end
