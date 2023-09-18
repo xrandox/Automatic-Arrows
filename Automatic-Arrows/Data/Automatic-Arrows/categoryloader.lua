@@ -42,9 +42,8 @@ function AA_LoadVisibleCategories()
 
     -- For each marker grabbed
     for _, marker in ipairs(lotsOfMarkers) do
-
-        -- If the marker has no display name, or is already loaded then skip it
-        if (marker.Category.DisplayName == nil or alreadyLoaded(marker.Category)) then goto continue end
+        -- If the marker is filtered, has no display name, or is already loaded then skip it
+        if (marker.BehaviorFiltered == true or marker.Category.DisplayName == nil or alreadyLoaded(marker.Category)) then goto continue end
 
         -- If all of the categories parents are visible then we have a visible category, so insert it
         if (validateParent(marker.Category)) then
